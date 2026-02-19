@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Маркер HIRO</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0b1020; color: #fff; }
+      .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 40px; }
+      .top { display:flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+      h1 { margin: 0; font-size: 20px; }
+      .hint { margin: 8px 0 0; color: rgba(255,255,255,0.7); font-size: 13px; line-height: 1.4; }
+      .panel { margin-top: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 14px; }
+      .markerBox { background: #fff; border-radius: 18px; padding: 16px; display:flex; justify-content:center; align-items:center; }
+      img { width: min(520px, 92%); height: auto; display:block; }
+      .actions { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+      a.btn, button.btn { text-decoration:none; border: none; cursor: pointer; display:inline-flex; align-items:center; justify-content:center; gap: 8px; padding: 10px 12px; border-radius: 999px; font-size: 14px; }
+      .btnPrimary { background: #fff; color: #2b165a; font-weight: 700; }
+      .btnGhost { border: 1px solid rgba(255,255,255,0.18); background: transparent; color: rgba(255,255,255,0.9); }
+      .btnGhost:hover { border-color: rgba(255,255,255,0.3); }
+      .note { margin-top: 10px; color: rgba(255,255,255,0.65); font-size: 12px; line-height: 1.4; }
+
+      @media print {
+        body { background: #fff; color: #000; }
+        .top, .hint, .actions, .note { display: none !important; }
+        .wrap { padding: 0; max-width: none; }
+        .panel { border: none; margin: 0; padding: 0; }
+        .markerBox { border-radius: 0; padding: 0; }
+        img { width: 150mm; }
+        @page { size: A4; margin: 10mm; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Маркер HIRO</h1>
+          <div class="hint">Покажи этот квадрат в камеру на странице <strong>/ar.html</strong>.</div>
+        </div>
+        <a class="btn btnGhost" href="./index.html">← Назад к маркерам</a>
+      </div>
+
+      <div class="panel">
+        <div class="markerBox">
+          <img src="./hiro.png" alt="HIRO marker" />
+        </div>
+
+        <div class="actions">
+          <button class="btn btnPrimary" type="button" onclick="window.print()">Печать</button>
+          <a class="btn btnGhost" href="./hiro-marker.pdf" download>Скачать PDF</a>
+          <a class="btn btnGhost" href="./hiro.png" download>Скачать PNG</a>
+          <a class="btn btnGhost" href="/ar.html">Открыть AR</a>
+        </div>
+
+        <div class="note">
+          Советы: печатай 10–15 см, без бликов; в AR держи маркер целиком в кадре.
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

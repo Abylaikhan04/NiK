@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebAR — История в дополненной реальности</title>
+    <script src="/vendor/aframe.min.js"></script>
+    <script src="/vendor/aframe-ar.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
+
+      /* Camera / permission overlay */
+      #perm-overlay {
+        position: fixed; inset: 0; z-index: 10000;
+        background: rgba(0,0,0,0.75);
+        display: none;
+        align-items: center; justify-content: center;
+        padding: 16px;
+      }
+      #perm-overlay.open { display: flex; }
+      #perm-card {
+        background: white;
+        width: 100%; max-width: 520px;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+      }
+      #perm-title { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+      #perm-text { font-size: 14px; color: #374151; line-height: 1.45; margin-bottom: 16px; }
+      #perm-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+      .perm-btn {
+        border: none;
+        padding: 10px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      #btn-request { background: #7c3aed; color: white; }
+      #btn-request:hover { background: #6d28d9; }
+      #btn-reload { background: #111827; color: white; }
+      #btn-reload:hover { background: #0b1220; }
+      #perm-links { margin-top: 12px; font-size: 13px; }
+      #perm-links a { color: #7c3aed; text-decoration: none; }
+      #perm-links a:hover { text-decoration: underline; }
+
+      #ui-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 999;
+      }
+
+      /* Top bar */
+      #top-bar {
+        position: absolute; top: 0; left: 0; right: 0;
+        padding: 16px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+        display: flex; align-items: center; justify-content: space-between;
+        pointer-events: auto;
+      }
+      #btn-back {
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
+        color: white; border: none; padding: 10px 20px;
+        border-radius: 999px; cursor: pointer; font-size: 14px;
+        transition: background 0.2s;
+      }
+      #btn-back:hover { background: rgba(255,255,255,0.35); }
+      #status-badge {
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        color: white; padding: 8px 16px; border-radius: 999px; font-size: 13px;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: pulse 1.5s infinite; }
+      @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+      /* Bottom cards */
+      #bottom-bar {
+        position: absolute; bottom: 24px; left: 0; right: 0;
+        padding: 0 16px;
+        pointer-events: auto;
+      }
+      #objects-list {
+        display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px;
+      }
+      .obj-card {
+        background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+        border: none; border-radius: 12px; padding: 10px 16px;
+        display: flex; align-items: center; gap: 10px;
+        cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        transition: transform 0.15s;
+      }
+      .obj-card:hover { transform: scale(1.04); }
+      .marker-dot { width: 10px; height: 10px; border-radius: 50%; }
+      .hiro-dot { background: #7c3aed; }
+      .kanji-dot { background: #db2777; }
+      .obj-label { font-size: 11px; color: #6b7280; }
+      .obj-name { font-size: 13px; font-weight: 600; color: #111827; }
+      #hint { color: rgba(255,255,255,0.6); font-size: 12px; text-align: center; }
+
+      /* Info modal */
+      #info-modal {
+        display: none; position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+        align-items: flex-end; justify-content: center; padding: 16px;
+      }
+      #info-modal.open { display: flex; }
+      #info-card {
+        background: white; border-radius: 24px 24px 16px 16px;
+        width: 100%; max-width: 520px; max-height: 80vh; overflow-y: auto;
+      }
+      #info-header {
+        background: linear-gradient(135deg, #4f46e5, #9333ea);
+        color: white; padding: 20px 24px; border-radius: 24px 24px 0 0;
+        display: flex; justify-content: space-between; align-items: flex-start;
+      }
+      #info-header h2 { font-size: 18px; margin-bottom: 4px; }
+      #info-header p { font-size: 13px; opacity: 0.85; }
+      #btn-close-info {
+        background: rgba(255,255,255,0.2); border: none; color: white;
+        width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+        font-size: 18px; flex-shrink: 0;
+      }
+      #info-body { padding: 20px 24px; }
+      #info-image { width: 100%; height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: 16px; }
+      #info-date { color: #7c3aed; font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+      #info-desc { color: #374151; font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+      #info-facts { list-style: none; }
+      #info-facts li {
+        display: flex; gap: 10px; align-items: flex-start;
+        padding: 10px 12px; background: #f5f3ff; border-radius: 10px;
+        margin-bottom: 8px; font-size: 13px; color: #374151;
+      }
+      .fact-num {
+        background: #7c3aed; color: white; width: 20px; height: 20px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 700; flex-shrink: 0;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Permission / help overlay (shown if camera doesn't start) -->
+    <div id="perm-overlay" aria-hidden="true">
+      <div id="perm-card">
+        <div id="perm-title">Камера не запустилась</div>
+        <div id="perm-text">
+          Это AR-режим с маркерами (HIRO/KANJI). Нужно разрешить доступ к камере.
+          Если ты открыл файл напрямую, камера не заработает — открывай через сервер (localhost).
+        </div>
+        <div id="perm-actions">
+          <button id="btn-request" class="perm-btn" type="button">Разрешить камеру</button>
+          <button id="btn-reload" class="perm-btn" type="button">Перезагрузить</button>
+        </div>
+        <div id="perm-links">
+          Маркеры для печати/PDF: <a href="/markers/" target="_blank" rel="noreferrer">/markers/</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- A-Frame Scene -->
+    <a-scene
+      embedded
+      arjs="trackingMethod: best; sourceType: webcam; videoTexture: true; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+      vr-mode-ui="enabled: false"
+      renderer="logarithmicDepthBuffer: true; precision: medium;"
+    >
+      <!-- HIRO marker — Колизей -->
+      <a-marker preset="hiro" id="marker-hiro" emitevents="true">
+        <a-box position="0 0.05 0" scale="1.8 0.08 1.8" color="#6d28d9" opacity="0.85"></a-box>
+        <a-cylinder position="0 0.45 0" radius="0.55" height="0.7" color="#c4b5a0"
+          animation="property: rotation; to: 0 360 0; loop: true; dur: 9000; easing: linear"></a-cylinder>
+        <a-cylinder position="0 0.2 0" radius="0.65" height="0.35" color="#a89070"></a-cylinder>
+        <a-cylinder position="0 0.8 0" radius="0.5" height="0.05" color="#9b8060" open-ended="true"></a-cylinder>
+        <a-text value="Колизей" position="0 1.5 0" align="center" color="#ffffff" scale="1.4 1.4 1.4"></a-text>
+        <a-text value="Древний Рим" position="0 1.2 0" align="center" color="#d8b4fe" scale="1 1 1"></a-text>
+      </a-marker>
+
+      <!-- KANJI marker — Пирамида Хеопса -->
+      <a-marker preset="kanji" id="marker-kanji" emitevents="true">
+        <a-box position="0 0.05 0" scale="1.8 0.08 1.8" color="#be185d" opacity="0.85"></a-box>
+        <a-entity position="0 0.55 0"
+          geometry="primitive: cone; height: 1.0; radiusBottom: 0.7; radiusTop: 0"
+          material="color: #d4a853; side: double"
+          animation="property: rotation; to: 0 360 0; loop: true; dur: 11000; easing: linear">
+        </a-entity>
+        <a-cylinder position="0 0.25 0" radius="0.52" height="0.04" color="#b8943a" open-ended="true"></a-cylinder>
+        <a-cylinder position="0 0.5 0" radius="0.35" height="0.04" color="#b8943a" open-ended="true"></a-cylinder>
+        <a-text value="Пирамида Хеопса" position="0 1.5 0" align="center" color="#ffffff" scale="1.4 1.4 1.4"></a-text>
+        <a-text value="Древний Египет" position="0 1.2 0" align="center" color="#fbcfe8" scale="1 1 1"></a-text>
+      </a-marker>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+
+    <!-- UI Overlay -->
+    <div id="ui-overlay">
+      <div id="top-bar">
+        <button id="btn-back" onclick="window.location.href='/'">
+          ← Назад
+        </button>
+        <div id="status-badge">
+          <div class="dot" id="status-dot"></div>
+          <span id="status-text">AR активен</span>
+        </div>
+      </div>
+
+      <div id="bottom-bar">
+        <div id="objects-list">
+          <button class="obj-card" onclick="showInfo('colosseum')">
+            <div class="marker-dot hiro-dot"></div>
+            <div>
+              <div class="obj-label">HIRO маркер</div>
+              <div class="obj-name">Колизей</div>
+            </div>
+            <span style="color:#7c3aed;font-size:14px">ℹ</span>
+          </button>
+          <button class="obj-card" onclick="showInfo('parthenon')">
+            <div class="marker-dot hiro-dot"></div>
+            <div>
+              <div class="obj-label">HIRO маркер</div>
+              <div class="obj-name">Парфенон</div>
+            </div>
+            <span style="color:#7c3aed;font-size:14px">ℹ</span>
+          </button>
+          <button class="obj-card" onclick="showInfo('machu-picchu')">
+            <div class="marker-dot hiro-dot"></div>
+            <div>
+              <div class="obj-label">HIRO маркер</div>
+              <div class="obj-name">Мачу-Пикчу</div>
+            </div>
+            <span style="color:#7c3aed;font-size:14px">ℹ</span>
+          </button>
+          <button class="obj-card" onclick="showInfo('pyramid')">
+            <div class="marker-dot kanji-dot"></div>
+            <div>
+              <div class="obj-label">KANJI маркер</div>
+              <div class="obj-name">Пирамида Хеопса</div>
+            </div>
+            <span style="color:#db2777;font-size:14px">ℹ</span>
+          </button>
+          <button class="obj-card" onclick="showInfo('stonehenge')">
+            <div class="marker-dot kanji-dot"></div>
+            <div>
+              <div class="obj-label">KANJI маркер</div>
+              <div class="obj-name">Стоунхендж</div>
+            </div>
+            <span style="color:#db2777;font-size:14px">ℹ</span>
+          </button>
+          <button class="obj-card" onclick="showInfo('great-wall')">
+            <div class="marker-dot kanji-dot"></div>
+            <div>
+              <div class="obj-label">KANJI маркер</div>
+              <div class="obj-name">Великая стена</div>
+            </div>
+            <span style="color:#db2777;font-size:14px">ℹ</span>
+          </button>
+        </div>
+        <p id="hint">Наведите камеру на маркер HIRO или KANJI</p>
+      </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="info-modal">
+      <div id="info-card">
+        <div id="info-header">
+          <div>
+            <h2 id="modal-name"></h2>
+            <p id="modal-period"></p>
+          </div>
+          <button id="btn-close-info" onclick="closeInfo()">✕</button>
+        </div>
+        <div id="info-body">
+          <img id="modal-image" src="" alt="" />
+          <div id="modal-date" class="" style="color:#7c3aed;font-size:13px;font-weight:500;margin-bottom:12px;"></div>
+          <p id="modal-desc"></p>
+          <ul id="info-facts"></ul>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const objects = {
+        colosseum: {
+          name: 'Колизей', period: 'Древний Рим', date: '70–80 н.э.',
+          description: 'Амфитеатр, памятник архитектуры Древнего Рима, один из самых грандиозных сооружений древности. Вмещал до 50 000 зрителей.',
+          facts: ['Строительство началось при императоре Веспасиане','Открыт императором Титом в 80 году н.э.','Имел 80 входов для быстрой эвакуации','Арена могла быть затоплена для морских сражений'],
+          imageUrl: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600'
+        },
+        pyramid: {
+          name: 'Пирамида Хеопса', period: 'Древний Египет', date: '2560 г. до н.э.',
+          description: 'Крупнейшая из египетских пирамид, единственное сохранившееся чудо света. Построена как гробница фараона Хуфу.',
+          facts: ['Состоит из 2,3 миллионов каменных блоков','Средний вес блока — 2,5 тонны','Строилась около 20 лет','Была самым высоким сооружением 3800 лет'],
+          imageUrl: 'https://images.unsplash.com/photo-1568322445389-f64ac2515020?w=600'
+        },
+        parthenon: {
+          name: 'Парфенон', period: 'Древняя Греция', date: '447–438 гг. до н.э.',
+          description: 'Храм богини Афины на афинском Акрополе. Вершина классической греческой архитектуры.',
+          facts: ['Построен по заказу Перикла','Архитекторы — Иктин и Калликрат','Внутри была 12-метровая статуя Афины','Использовались оптические иллюзии'],
+          imageUrl: 'https://images.unsplash.com/photo-1603565816030-6b389eeb23cb?w=600'
+        },
+        stonehenge: {
+          name: 'Стоунхендж', period: 'Доисторическая Британия', date: '3000–2000 гг. до н.э.',
+          description: 'Мегалитическое сооружение в графстве Уилтшир, Англия. Предположительно — обсерватория и ритуальный центр.',
+          facts: ['Строился 1500 лет','Камни весят до 25 тонн','Назначение до сих пор загадка','Ориентирован на точки солнцестояния'],
+          imageUrl: 'https://media.cnn.com/api/v1/images/stellar/prod/gettyimages-682586546.jpg?c=16x9&q=h_833,w_1480,c_fill?w=600'
+        },
+        'machu-picchu': {
+          name: 'Мачу-Пикчу', period: 'Империя Инков', date: '1450 г. н.э.',
+          description: 'Древний город инков на высоте 2450 м. Одно из новых семи чудес света.',
+          facts: ['Построен при Пачакутеке','Открыт миру в 1911 году','Более 200 строений','Без металлических инструментов'],
+          imageUrl: 'https://images.unsplash.com/photo-1587595431973-160d0d94add1?w=600'
+        },
+        'great-wall': {
+          name: 'Великая Китайская стена', period: 'Древний Китай', date: 'VII в. до н.э. — XVII в. н.э.',
+          description: 'Крупнейший памятник архитектуры, строившийся для защиты северных границ Китая.',
+          facts: ['Длина всех участков — 21 000+ км','Строилась 2000+ лет','Участвовал 1 млн человек','Из космоса не видна (миф)'],
+          imageUrl: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=600'
+        }
+      };
+
+      function showInfo(id) {
+        const obj = objects[id];
+        if (!obj) return;
+        document.getElementById('modal-name').textContent = obj.name;
+        document.getElementById('modal-period').textContent = obj.period;
+        document.getElementById('modal-date').textContent = obj.date;
+        document.getElementById('modal-desc').textContent = obj.description;
+        document.getElementById('modal-image').src = obj.imageUrl;
+        const ul = document.getElementById('info-facts');
+        ul.innerHTML = obj.facts.map((f, i) =>
+          `<li><div class="fact-num">${i+1}</div><span>${f}</span></li>`
+        ).join('');
+        document.getElementById('info-modal').classList.add('open');
+      }
+
+      function closeInfo() {
+        document.getElementById('info-modal').classList.remove('open');
+      }
+
+      // Marker detection status
+      const statusDot = document.getElementById('status-dot');
+      const statusText = document.getElementById('status-text');
+      function setStatus(text, color) {
+        if (statusText) statusText.textContent = text;
+        if (statusDot) statusDot.style.background = color;
+      }
+
+      function bindMarkerStatus() {
+        const hiro = document.getElementById('marker-hiro');
+        const kanji = document.getElementById('marker-kanji');
+        if (!hiro || !kanji) return;
+
+        hiro.addEventListener('markerFound', () => setStatus('Маркер найден: HIRO', '#a78bfa'));
+        hiro.addEventListener('markerLost', () => setStatus('Маркер потерян', '#f59e0b'));
+        kanji.addEventListener('markerFound', () => setStatus('Маркер найден: KANJI', '#f472b6'));
+        kanji.addEventListener('markerLost', () => setStatus('Маркер потерян', '#f59e0b'));
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindMarkerStatus);
+      } else {
+        bindMarkerStatus();
+      }
+
+      const overlay = document.getElementById('perm-overlay');
+      const btnRequest = document.getElementById('btn-request');
+      const btnReload = document.getElementById('btn-reload');
+
+      function openOverlay() {
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeOverlay() {
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+
+      async function requestCameraPermission() {
+        try {
+          if (!navigator.mediaDevices?.getUserMedia) {
+            openOverlay();
+            return;
+          }
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          stream.getTracks().forEach(t => t.stop());
+          closeOverlay();
+          // AR.js will re-initialize the webcam on reload
+          window.location.reload();
+        } catch {
+          openOverlay();
+        }
+      }
+
+      btnRequest?.addEventListener('click', requestCameraPermission);
+      btnReload?.addEventListener('click', () => window.location.reload());
+
+      // If opened as a file:// page, camera will be blocked
+      if (window.location.protocol === 'file:') {
+        openOverlay();
+      } else {
+        // If AR.js doesn't create/play a video within a short time, show help
+        window.setTimeout(() => {
+          const video = document.querySelector('video');
+          const ready = !!(video && (video.srcObject || video.readyState >= 2));
+          if (!ready) openOverlay();
+        }, 3500);
+      }
+    </script>
+  </body>
+</html>
