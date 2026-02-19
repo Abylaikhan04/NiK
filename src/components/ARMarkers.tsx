@@ -1,13 +1,87 @@
 import { Download, Printer, QrCode, Info } from 'lucide-react';
 
 export function ARMarkers() {
-  const handlePrint = () => {
-    window.print();
+  const handlePrintMarker = (markerType: string) => {
+    const markerHtml: Record<string, string> = {
+      HIRO: `
+        <div style="text-align:center;">
+          <img src="/markers/hiro.png" alt="HIRO marker"
+               style="width:80vmin;height:80vmin;object-fit:contain;display:block;margin:0 auto;" />
+          <p style="font-family:sans-serif;font-size:12px;margin-top:8px;color:#555;">
+            HIRO маркер · WebAR История
+          </p>
+        </div>`,
+      KANJI: `
+        <div style="text-align:center;">
+          <div style="
+            width:80vmin;height:80vmin;
+            border:16px solid #000;
+            display:inline-flex;align-items:center;justify-content:center;
+            background:#000;
+          ">
+            <div style="
+              width:calc(80vmin - 64px);height:calc(80vmin - 64px);
+              background:#fff;
+              display:flex;align-items:center;justify-content:center;
+              font-size:40vmin;font-weight:700;color:#000;line-height:1;
+            ">漢</div>
+          </div>
+          <p style="font-family:sans-serif;font-size:12px;margin-top:8px;color:#555;">
+            KANJI маркер · WebAR История
+          </p>
+        </div>`,
+    };
+
+    const html = markerHtml[markerType];
+    if (!html) return;
+
+    const win = window.open('', '_blank', 'width=600,height=650');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${markerType} маркер</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #fff;
+    }
+    @media print {
+      body { min-height: unset; }
+    }
+  </style>
+</head>
+<body>
+  ${html}
+  <script>
+    window.onload = function () {
+      window.print();
+      window.onafterprint = function () { window.close(); };
+    };
+  </script>
+</body>
+</html>`);
+    win.document.close();
   };
 
   const handleDownload = (markerType: string) => {
-    // В реальном проекте здесь был бы скачивание PDF с маркером
-    alert(`Скачивание ${markerType} маркера... (в демо-версии недоступно)`);
+    const files: Record<string, { url: string; filename: string }> = {
+      HIRO:  { url: '/markers/hiro-marker.pdf',  filename: 'hiro-marker.pdf'  },
+      KANJI: { url: '/markers/kanji-marker.pdf', filename: 'kanji-marker.pdf' },
+    };
+    const file = files[markerType];
+    if (!file) return;
+    const a = document.createElement('a');
+    a.href = file.url;
+    a.download = file.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (
@@ -70,7 +144,7 @@ export function ARMarkers() {
               {/* Actions */}
               <div className="flex gap-3 print:hidden">
                 <button
-                  onClick={handlePrint}
+                  onClick={() => handlePrintMarker('HIRO')}
                   className="flex-1 flex items-center justify-center gap-2 bg-purple-100 text-purple-700 px-4 py-3 rounded-lg hover:bg-purple-200 transition-colors"
                 >
                   <Printer className="w-5 h-5" />
@@ -114,7 +188,7 @@ export function ARMarkers() {
               {/* Actions */}
               <div className="flex gap-3 print:hidden">
                 <button
-                  onClick={handlePrint}
+                  onClick={() => handlePrintMarker('KANJI')}
                   className="flex-1 flex items-center justify-center gap-2 bg-indigo-100 text-indigo-700 px-4 py-3 rounded-lg hover:bg-indigo-200 transition-colors"
                 >
                   <Printer className="w-5 h-5" />

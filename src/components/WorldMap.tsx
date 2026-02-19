@@ -36,10 +36,10 @@ export function WorldMap() {
   const selectedObject = historicalObjects.find(o => o.id === selectedObjectId) || null;
 
   const regions = [
-    { name: 'Р•РІСЂРѕРїР°', color: 'from-blue-500 to-indigo-500', objects: ['colosseum', 'parthenon', 'stonehenge'] },
-    { name: 'РђС„СЂРёРєР°', color: 'from-orange-500 to-red-500', objects: ['pyramid'] },
-    { name: 'РђР·РёСЏ', color: 'from-green-500 to-emerald-500', objects: ['great-wall'] },
-    { name: 'Р®Р¶РЅР°СЏ РђРјРµСЂРёРєР°', color: 'from-purple-500 to-pink-500', objects: ['machu-picchu'] },
+    { name: 'Европа', color: 'from-blue-500 to-indigo-500', objects: ['colosseum', 'parthenon', 'stonehenge'] },
+    { name: 'Африка', color: 'from-orange-500 to-red-500', objects: ['pyramid'] },
+    { name: 'Азия', color: 'from-green-500 to-emerald-500', objects: ['great-wall'] },
+    { name: 'Южная Америка', color: 'from-purple-500 to-pink-500', objects: ['machu-picchu'] },
   ];
 
   return (
@@ -50,9 +50,9 @@ export function WorldMap() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mb-4">
             <Globe className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-gray-900 mb-3">РљР°СЂС‚Р° РёСЃС‚РѕСЂРёС‡РµСЃРєРёС… РѕР±СЉРµРєС‚РѕРІ</h1>
+          <h1 className="text-gray-900 mb-3">Карта исторических объектов</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            РќР°Р¶РјРёС‚Рµ РЅР° РјР°СЂРєРµСЂ РЅР° РєР°СЂС‚Рµ РёР»Рё РІ СЃРїРёСЃРєРµ, С‡С‚РѕР±С‹ СѓР·РЅР°С‚СЊ Р±РѕР»СЊС€Рµ Рѕ РїР°РјСЏС‚РЅРёРєРµ
+            Нажмите на маркер на карте или в списке, чтобы узнать больше о памятнике
           </p>
         </div>
 
@@ -99,7 +99,7 @@ export function WorldMap() {
                           padding: '5px 14px', cursor: 'pointer', fontSize: '12px', fontWeight: 600,
                         }}
                       >
-                        РџРѕРґСЂРѕР±РЅРµРµ
+                        Подробнее
                       </button>
                     </div>
                   </Popup>
