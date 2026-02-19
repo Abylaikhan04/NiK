@@ -176,7 +176,7 @@
 
     <!-- A-Frame Scene -->
     <a-scene
-      arjs="trackingMethod: best; sourceType: webcam; videoTexture: true; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+      arjs="trackingMethod: best; sourceType: webcam; videoTexture: true; debugUIEnabled: false; detectionMode: mono;"
       vr-mode-ui="enabled: false"
       renderer="logarithmicDepthBuffer: true; precision: medium;"
     >
@@ -205,7 +205,7 @@
         <a-text value="Древний Египет" position="0 1.2 0" align="center" color="#fbcfe8" scale="1 1 1"></a-text>
       </a-marker>
 
-      <a-entity camera></a-entity>
+      <a-entity camera look-controls="enabled: false"></a-entity>
     </a-scene>
 
     <!-- UI Overlay -->
