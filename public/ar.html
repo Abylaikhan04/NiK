@@ -8,7 +8,24 @@
     <script src="/vendor/aframe-ar.js"></script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+      /* A-Frame scene: centered, size set by JS to preserve camera aspect ratio */
+      a-scene {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+      }
+      a-scene canvas {
+        display: block;
+      }
+
+      /* AR.js injects a raw <video> into DOM — hide it, camera is already
+         rendered as a WebGL texture inside the canvas (videoTexture: true) */
+      video {
+        display: none !important;
+      }
 
       /* Camera / permission overlay */
       #perm-overlay {
@@ -159,7 +176,6 @@
 
     <!-- A-Frame Scene -->
     <a-scene
-      embedded
       arjs="trackingMethod: best; sourceType: webcam; videoTexture: true; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
       vr-mode-ui="enabled: false"
       renderer="logarithmicDepthBuffer: true; precision: medium;"
@@ -361,6 +377,66 @@
       } else {
         bindMarkerStatus();
       }
+
+      // ── Aspect-ratio fix ──────────────────────────────────────────────────
+      // AR.js injects a <video> element. Once its dimensions are known we
+      // resize the a-scene (and its canvas) to exactly fit the viewport
+      // without stretching, adding black letterbox bars where needed.
+      (function fixCameraAspect() {
+        function applySize(vw, vh) {
+          const sw = window.innerWidth;
+          const sh = window.innerHeight;
+          const videoAspect = vw / vh;
+          const screenAspect = sw / sh;
+
+          let width, height;
+          if (videoAspect > screenAspect) {
+            // video wider → fit width, bars top & bottom
+            width  = sw;
+            height = Math.round(sw / videoAspect);
+          } else {
+            // video taller → fit height, bars left & right
+            height = sh;
+            width  = Math.round(sh * videoAspect);
+          }
+
+          const scene = document.querySelector('a-scene');
+          if (!scene) return;
+          scene.style.width  = width  + 'px';
+          scene.style.height = height + 'px';
+          const canvas = scene.querySelector('canvas');
+          if (canvas) {
+            canvas.style.width  = width  + 'px';
+            canvas.style.height = height + 'px';
+          }
+        }
+
+        // Poll until AR.js creates and plays the video element
+        const timer = setInterval(() => {
+          const video = document.querySelector('video');
+          if (!video) return;
+
+          const tryApply = () => {
+            if (video.videoWidth && video.videoHeight) {
+              applySize(video.videoWidth, video.videoHeight);
+              clearInterval(timer);
+
+              // Re-apply on window resize (e.g. rotating the device)
+              window.addEventListener('resize', () =>
+                applySize(video.videoWidth, video.videoHeight)
+              );
+            }
+          };
+
+          if (video.readyState >= 1) {
+            tryApply();
+          } else {
+            video.addEventListener('loadedmetadata', tryApply);
+            clearInterval(timer); // stop polling, listener will fire
+          }
+        }, 150);
+      })();
+      // ─────────────────────────────────────────────────────────────────────
 
       const overlay = document.getElementById('perm-overlay');
       const btnRequest = document.getElementById('btn-request');

@@ -38,7 +38,7 @@ export function ARScene({ onBack }: ARSceneProps) {
       <div className="flex-1 overflow-y-auto px-4 py-8 max-w-2xl mx-auto w-full">
 
         {/* Launch card */}
-        <div className="relative rounded-3xl overflow-hidden mb-8 bg-white/10 backdrop-blur-md shadow-2xl">
+        <div className="relative rounded-3xl overflow-hidden mb-8 bg-gradient-to-br from-purple-600 via-pink-600 to-indigo-700 shadow-2xl">
           <div
             className="absolute inset-0 opacity-20"
             style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, #fff 0%, transparent 60%)' }}
@@ -54,7 +54,7 @@ export function ARScene({ onBack }: ARSceneProps) {
             </p>
             <button
               onClick={openAR}
-              className="inline-flex items-center gap-2 bg-white text-purple-800 font-semibold px-8 py-3 rounded-2xl shadow-lg hover:bg-purple-50 transition-all hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold px-8 py-3 rounded-2xl shadow-lg hover:from-purple-600 hover:to-pink-600 transition-all hover:scale-105 active:scale-95"
             >
               <Camera className="w-5 h-5" />
               Открыть AR камеру
