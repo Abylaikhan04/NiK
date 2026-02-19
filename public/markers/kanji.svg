@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <!-- White background -->
+  <rect width="600" height="600" fill="white"/>
+  <!-- Black border -->
+  <rect x="30" y="30" width="540" height="540" fill="black"/>
+  <!-- White inner area -->
+  <rect x="80" y="80" width="440" height="440" fill="white"/>
+  <!-- Black inner border -->
+  <rect x="100" y="100" width="400" height="400" fill="black"/>
+  <!-- White innermost area -->
+  <rect x="120" y="120" width="360" height="360" fill="white"/>
+  <!-- Kanji character 空 (ku/sora) -->
+  <text x="300" y="420" font-family="'MS Gothic','Yu Gothic','Noto Sans JP','serif'" font-size="260" fill="black" text-anchor="middle" font-weight="bold">空</text>
+</svg>

@@ -19,8 +19,45 @@ import { BookOpen, Camera, Home, QrCode, Clock, Brain, Info, Presentation, Troph
 
 type Screen = 'start' | 'gallery' | 'ar' | 'markers' | 'timeline' | 'quiz' | 'about' | 'demo' | 'achievements' | 'map' | 'search' | 'compare' | 'learning';
 
+const HASH_TO_SCREEN: Record<string, Screen> = {
+  '':            'start',
+  '#/':          'start',
+  '#/gallery':   'gallery',
+  '#/ar':        'ar',
+  '#/markers':   'markers',
+  '#/timeline':  'timeline',
+  '#/quiz':      'quiz',
+  '#/about':     'about',
+  '#/demo':      'demo',
+  '#/achievements': 'achievements',
+  '#/map':       'map',
+  '#/search':    'search',
+  '#/compare':   'compare',
+  '#/learning':  'learning',
+};
+
+const SCREEN_TO_HASH: Record<Screen, string> = {
+  start:        '#/',
+  gallery:      '#/gallery',
+  ar:           '#/ar',
+  markers:      '#/markers',
+  timeline:     '#/timeline',
+  quiz:         '#/quiz',
+  about:        '#/about',
+  demo:         '#/demo',
+  achievements: '#/achievements',
+  map:          '#/map',
+  search:       '#/search',
+  compare:      '#/compare',
+  learning:     '#/learning',
+};
+
+function hashToScreen(): Screen {
+  return HASH_TO_SCREEN[window.location.hash] ?? 'start';
+}
+
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('start');
+  const [currentScreen, setCurrentScreen] = useState<Screen>(() => hashToScreen());
   const [selectedObject, setSelectedObject] = useState<HistoricalObject | null>(null);
   const [userProgress, setUserProgress] = useState<UserProgress>(() => {
     try {
@@ -30,6 +67,24 @@ export default function App() {
       return defaultProgress;
     }
   });
+
+  // Keep URL hash in sync with screen
+  useEffect(() => {
+    const hash = SCREEN_TO_HASH[currentScreen];
+    if (window.location.hash !== hash) {
+      window.location.hash = hash;
+    }
+  }, [currentScreen]);
+
+  // React to browser Back / Forward buttons
+  useEffect(() => {
+    const onHashChange = () => {
+      const screen = hashToScreen();
+      setCurrentScreen(screen);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   // Save progress to localStorage
   useEffect(() => {
