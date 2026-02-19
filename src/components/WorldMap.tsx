@@ -57,7 +57,7 @@ export function WorldMap() {
         </div>
 
         {/* Real Leaflet Map */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8" style={{ height: '500px' }}>
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8" style={{ height: '500px', isolation: 'isolate' }}>
           <MapContainer
             center={[30, 20]}
             zoom={2}
